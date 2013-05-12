@@ -1,0 +1,9 @@
+.root {
+    -fx-base: rgb(50, 50, 50);
+    -fx-background: rgb(50, 50, 50);
+    -fx-background-color: black;
+}
+ 
+.text-field {
+    -fx-font-weight:bold;
+}

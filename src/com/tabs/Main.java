@@ -2,8 +2,7 @@ package com.tabs;
 
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
+import javafx.scene.*;
 import javafx.stage.Stage;
 
 public class Main extends Application {
@@ -16,11 +15,7 @@ public class Main extends Application {
         
         stage.setScene(scene);
         stage.setResizable(false);
-        stage.setTitle("Free SMS");
+        stage.setTitle("Pinoy SMS");
         stage.show();
-    }
-
-    public static void main(String[] args) {
-        launch(args);
     }
 }

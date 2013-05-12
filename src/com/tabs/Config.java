@@ -6,8 +6,6 @@ import tabs.*;
 
 public class Config {
 
-    private Config() { }
-
     public static void writeFirm(String key, String secret) {
         try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream("config"))) {
             oos.writeObject(new Firm(key, secret));
@@ -24,17 +22,17 @@ public class Config {
         } 
     }
     
-    public static void writeOutbox(List<Outbox> lst) {
-        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream("outbox"))) {
+    public static void writeContacts(List<Contacts> lst) {
+        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream("contacts"))) {
             oos.writeObject(lst);
         } catch (Exception ex) {
             FXDialog.showMessageDialog(ex.getMessage(), "ERROR", Message.ERROR);
         }
     }
     
-    public static List<Outbox> loadOutbox() {
-        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream("outbox"))) {
-            return ((List<Outbox>) ois.readObject());
+    public static List<Contacts> loadContacts() {
+        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream("contacts"))) {
+            return ((List<Contacts>) ois.readObject());
         } catch (Exception ex) {
             return null;
         } 

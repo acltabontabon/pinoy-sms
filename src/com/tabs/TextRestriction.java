@@ -1,9 +1,7 @@
 package com.tabs;
 
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
+import javafx.beans.value.*;
+import javafx.scene.control.*;
 
 public class TextRestriction implements ChangeListener {
     
