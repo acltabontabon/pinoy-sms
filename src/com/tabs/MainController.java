@@ -17,12 +17,15 @@ public class MainController implements Initializable {
     private static MainController instance;
     private static Firm firm;
     private static List<Contacts> contactList;
+    private static List<SentMessage> sentMessageList;
     private static ObservableList<Contacts> observableContacts;
+    private static ObservableList<SentMessage> observableSentMessages;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         instance = this;
         contactList = Config.loadContacts();
+        sentMessageList = Config.loadSentItems();
         
         // Bind the StackPane visibility to its designated toggle button        
         spWrite.visibleProperty().bind(tgWrite.selectedProperty());
@@ -41,8 +44,15 @@ public class MainController implements Initializable {
         observableContacts = FXCollections.observableArrayList();
         tblContact.setItems(observableContacts);
         
+        // Sets the tableView for the sent messages list
+        colRecipient.setCellValueFactory(new PropertyValueFactory<SentMessage, String>("number"));
+        colMessage.setCellValueFactory(new PropertyValueFactory<SentMessage, String>("message"));
+        observableSentMessages = FXCollections.observableArrayList();
+        tblSentMessage.setItems(observableSentMessages);
+        
         initFirm();
         reloadContactList();
+        reloadSentMessageList();
     }   
     
     public static MainController getInstance() { return instance; }
@@ -65,6 +75,16 @@ public class MainController implements Initializable {
         Config.writeContacts(contactList);
     }
     
+    private void reloadSentMessageList() {
+        observableSentMessages.clear();
+        
+        for (int i = 0; i < sentMessageList.size(); i++) {
+            observableSentMessages.add(new SentMessage(sentMessageList.get(i).getMessage(), sentMessageList.get(i).getNumber()));
+        }
+        
+        Config.writeSentItems(sentMessageList);
+    }
+    
     public String checkPrefix(String num) {
         if (num.startsWith("0") && num.length() == 11)
             num = "63" + num.substring(1);
@@ -80,6 +100,8 @@ public class MainController implements Initializable {
 
             for (int i = 0; i < result.length; i++) {
                 if (result[i].getStatus() == 0) {    // Success
+                    sentMessageList.add(new SentMessage(tfMessage.getText(), tfPhoneNo.getText()));
+                    reloadSentMessageList();
                     FXDialog.showMessageDialog("Your message has been sent.\n\nRemaining Balance: " + result[i].getRemainingBalance() + "\nMessage Cost: " + result[i].getMessagePrice(), "Pinoy SMS", Message.INFORMATION);
                 } else if (result[i].getStatus() == 2) {    // Missing params
                     throw new Exception("Your request is incomplete and missing some mandatory fields.");
@@ -106,6 +128,13 @@ public class MainController implements Initializable {
         if (tblContact.getSelectionModel().getSelectedIndex() != -1) {
             contactList.remove(tblContact.getSelectionModel().getSelectedIndex());
             reloadContactList();
+        }
+    }
+    
+    @FXML private void deleteSentMessage(ActionEvent evt) {
+        if (tblSentMessage.getSelectionModel().getSelectedIndex() != -1) {
+            sentMessageList.remove(tblSentMessage.getSelectionModel().getSelectedIndex());
+            reloadSentMessageList();
         }
     }
     
@@ -159,6 +188,11 @@ public class MainController implements Initializable {
     @FXML private TableView tblContact;
     @FXML private TableColumn colName;
     @FXML private TableColumn colNumber;
+    
+    //Sent Message StackPane
+    @FXML private TableView tblSentMessage;
+    @FXML private TableColumn colRecipient;
+    @FXML private TableColumn colMessage;
     
     //Configuration StackPane
     @FXML private TextField tfKey;

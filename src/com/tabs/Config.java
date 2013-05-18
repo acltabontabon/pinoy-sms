@@ -37,4 +37,20 @@ public class Config {
             return null;
         } 
     }
+    
+    public static void writeSentItems(List<SentMessage> lst) {
+        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream("sent"))) {
+            oos.writeObject(lst);
+        } catch (Exception ex) {
+            FXDialog.showMessageDialog(ex.getMessage(), "ERROR", Message.ERROR);
+        }
+    }
+    
+    public static List<SentMessage> loadSentItems() {
+        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream("sent"))) {
+            return ((List<SentMessage>) ois.readObject());
+        } catch (Exception ex) {
+            return null;
+        } 
+    }
 }
