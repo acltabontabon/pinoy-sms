@@ -13,28 +13,7 @@ import javafx.scene.layout.StackPane;
 import tabs.*;
 
 public class MainController implements Initializable {
-    
-    //Write Message StackPane
-    @FXML private ToggleButton tgWrite;
-    @FXML private ToggleButton tgOutbox;
-    @FXML private ToggleButton tgConfiguration;
-    @FXML private StackPane spWrite;
-    @FXML private StackPane spContacts;
-    @FXML private StackPane spConfiguration;
-    @FXML private TextField tfPhoneNo;
-    @FXML private TextField tfSender;
-    @FXML private TextArea tfMessage;
-    @FXML private Label lblRemainingChars;
-    
-    //Contact StackPane
-    @FXML private TableView tblContact;
-    @FXML private TableColumn colName;
-    @FXML private TableColumn colNumber;
-    
-    //Configuration StackPane
-    @FXML private TextField tfKey;
-    @FXML private TextField tfSecret;
-    
+
     private static MainController instance;
     private static Firm firm;
     private static List<Contacts> contactList;
@@ -48,6 +27,7 @@ public class MainController implements Initializable {
         // Bind the StackPane visibility to its designated toggle button        
         spWrite.visibleProperty().bind(tgWrite.selectedProperty());
         spContacts.visibleProperty().bind(tgOutbox.selectedProperty());
+        spSent.visibleProperty().bind(tgSent.selectedProperty());
         spConfiguration.visibleProperty().bind(tgConfiguration.selectedProperty());
 
         // Add validation for the input fields
@@ -85,23 +65,40 @@ public class MainController implements Initializable {
         Config.writeContacts(contactList);
     }
     
+    public String checkPrefix(String num) {
+        if (num.startsWith("0") && num.length() == 11)
+            num = "63" + num.substring(1);
+        
+        return num;
+    }
+    
     @FXML private void sendMessage(ActionEvent evt) {
         try {
             NexmoSmsClient client = new NexmoSmsClient(firm.getKey(), firm.getSecret());
-            TextMessage message = new TextMessage(tfSender.getText(), tfPhoneNo.getText(), tfMessage.getText());
+            TextMessage message = new TextMessage(tfSender.getText(), checkPrefix(tfPhoneNo.getText()), tfMessage.getText());
             SmsSubmissionResult[] result = client.submitMessage(message);
-            
-            for(int i=0; i<result.length; i++) {
-                if(result[i].getStatus() == 0) {
+
+            for (int i = 0; i < result.length; i++) {
+                if (result[i].getStatus() == 0) {    // Success
                     FXDialog.showMessageDialog("Your message has been sent.\n\nRemaining Balance: " + result[i].getRemainingBalance() + "\nMessage Cost: " + result[i].getMessagePrice(), "Pinoy SMS", Message.INFORMATION);
-                    tfMessage.requestFocus();
-                }
-                else {
-                    throw new Exception(result[i].getErrorText() + "\n\nRemaining Balance: " + result[i].getRemainingBalance());
+                } else if (result[i].getStatus() == 2) {    // Missing params
+                    throw new Exception("Your request is incomplete and missing some mandatory fields.");
+                } else if (result[i].getStatus() == 4) {    // Invalid credentials
+                    throw new Exception("The api_key / api_secret you supplied is either invalid or disabled.");
+                } else if (result[i].getStatus() == 6 || result[i].getStatus() == 15) {    // Invalid message
+                    throw new Exception("The Nexmo platform was unable to process this message, for example, \nan un-recognized number prefix.");
+                } else if (result[i].getStatus() == 9) {    // Partner quota exceeded
+                    throw new Exception("Your trial account does not have sufficient credit to process this \nmessage.");
+                } else if (result[i].getStatus() == 10) {    // Too many existing binds
+                    throw new Exception("The number of simultaneous connections to the platform exceeds the \ncapabilities of your account.");
+                } else {
+                    throw new Exception(String.format("Error Code: %d \nError Text: %s", result[i].getStatus(), result[i].getErrorText()));
                 }
             }
         } catch (Exception e) {
             FXDialog.showMessageDialog(e.getLocalizedMessage(), "Error", Message.ERROR);
+        } finally {
+             tfMessage.requestFocus();
         }
     }
         
@@ -118,7 +115,7 @@ public class MainController implements Initializable {
             String number = FXDialog.showInputDialog("Enter new contact number:", "Add Contact");
 
             if (number != null && !number.trim().equals("")) {
-                contactList.add(new Contacts(name, number));
+                contactList.add(new Contacts(name, checkPrefix(number)));
                 reloadContactList();
             }
         }
@@ -132,12 +129,38 @@ public class MainController implements Initializable {
     }
     
     @FXML private void configure(ActionEvent evt) {
-        Config.writeFirm(tfKey.getText(), tfSecret.getText());
-        initFirm();
-        
-        tfKey.clear();
-        tfSecret.clear();
-        
-        FXDialog.showMessageDialog("API Configuration has been updated.", "Pinoy SMS", Message.INFORMATION);
+        if (!tfKey.getText().trim().equals("") && !tfSecret.getText().trim().equals("")) {
+            Config.writeFirm(tfKey.getText(), tfSecret.getText());
+            initFirm();
+
+            tfKey.clear();
+            tfSecret.clear();
+
+            FXDialog.showMessageDialog("API Configuration has been updated.", "Pinoy SMS", Message.INFORMATION);
+        }
     }
+
+    @FXML private ToggleButton tgWrite;
+    @FXML private ToggleButton tgOutbox;
+    @FXML private ToggleButton tgConfiguration;
+    @FXML private ToggleButton tgSent;
+    @FXML private StackPane spSent;
+    @FXML private StackPane spWrite;
+    @FXML private StackPane spContacts;
+    @FXML private StackPane spConfiguration;
+    
+    //Write Message StackPane
+    @FXML private TextField tfPhoneNo;
+    @FXML private TextField tfSender;
+    @FXML private TextArea tfMessage;
+    @FXML private Label lblRemainingChars;
+    
+    //Contact StackPane
+    @FXML private TableView tblContact;
+    @FXML private TableColumn colName;
+    @FXML private TableColumn colNumber;
+    
+    //Configuration StackPane
+    @FXML private TextField tfKey;
+    @FXML private TextField tfSecret;
 }
