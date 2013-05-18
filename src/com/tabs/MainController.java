@@ -67,10 +67,14 @@ public class MainController implements Initializable {
     
     public static MainController getInstance() { return instance; }
     
+    // Create an instance of the Firm class to access api keys
     private void initFirm() { firm = Config.loadFirm(); }
     
     public void updateRemainingChars(int r) { lblRemainingChars.setText(r + ""); }
         
+    /**
+     * Updates the tableView for every changes in the contact list.
+     */
     private void reloadContactList() {
         observableContacts.clear();
         
@@ -93,7 +97,7 @@ public class MainController implements Initializable {
                     tfMessage.requestFocus();
                 }
                 else {
-                    throw new Exception("Remaining Balance: " + result[i].getRemainingBalance() + "\n\n" + result[i].getErrorText());
+                    throw new Exception(result[i].getErrorText() + "\n\nRemaining Balance: " + result[i].getRemainingBalance());
                 }
             }
         } catch (Exception e) {
@@ -122,7 +126,7 @@ public class MainController implements Initializable {
     
     @FXML private void selectContact(ActionEvent evt) {
         if(tblContact.getSelectionModel().getSelectedIndex() != -1) {
-            tfPhoneNo.setText(contactList.get(tblContact.getSelectionModel().getSelectedIndex()).getNumber());
+            tfPhoneNo.setText(colNumber.getCellData((int) tblContact.getSelectionModel().getSelectedIndex()) + "");
             tgWrite.setSelected(true);
         }
     }
