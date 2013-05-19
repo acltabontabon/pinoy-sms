@@ -85,7 +85,7 @@ public class MainController implements Initializable {
         Config.writeSentItems(sentMessageList);
     }
     
-    public String checkPrefix(String num) {
+    private String checkPrefix(String num) {
         if (num.startsWith("0") && num.length() == 11)
             num = "63" + num.substring(1);
         
@@ -93,16 +93,20 @@ public class MainController implements Initializable {
     }
     
     @FXML private void sendMessage(ActionEvent evt) {
+        boolean succeeded = false;  // sending status
+        int attempt = 0;            // number of sending attempts.
+        
+        SmsSubmissionResult[] result =  null;
+        
         try {
             NexmoSmsClient client = new NexmoSmsClient(firm.getKey(), firm.getSecret());
             TextMessage message = new TextMessage(tfSender.getText(), checkPrefix(tfPhoneNo.getText()), tfMessage.getText());
-            SmsSubmissionResult[] result = client.submitMessage(message);
+            result = client.submitMessage(message);
 
             for (int i = 0; i < result.length; i++) {
                 if (result[i].getStatus() == 0) {    // Success
-                    sentMessageList.add(new SentMessage(tfMessage.getText(), tfPhoneNo.getText()));
-                    reloadSentMessageList();
-                    FXDialog.showMessageDialog("Your message has been sent.\n\nRemaining Balance: " + result[i].getRemainingBalance() + "\nMessage Cost: " + result[i].getMessagePrice(), "Pinoy SMS", Message.INFORMATION);
+                    attempt = i;
+                    succeeded = true;
                 } else if (result[i].getStatus() == 2) {    // Missing params
                     throw new Exception("Your request is incomplete and missing some mandatory fields.");
                 } else if (result[i].getStatus() == 4) {    // Invalid credentials
@@ -120,7 +124,12 @@ public class MainController implements Initializable {
         } catch (Exception e) {
             FXDialog.showMessageDialog(e.getLocalizedMessage(), "Error", Message.ERROR);
         } finally {
-             tfMessage.requestFocus();
+            if (succeeded) {
+                sentMessageList.add(new SentMessage(tfMessage.getText(), tfPhoneNo.getText()));
+                reloadSentMessageList();
+                FXDialog.showMessageDialog("Your message has been sent.\n\nRemaining Balance: " + result[attempt].getRemainingBalance() + "\nMessage Cost: " + result[attempt].getMessagePrice(), "Pinoy SMS", Message.INFORMATION);
+            }
+            tfMessage.requestFocus();
         }
     }
         
@@ -156,7 +165,7 @@ public class MainController implements Initializable {
             tgWrite.setSelected(true);
         }
     }
-    
+
     @FXML private void configure(ActionEvent evt) {
         if (!tfKey.getText().trim().equals("") && !tfSecret.getText().trim().equals("")) {
             Config.writeFirm(tfKey.getText(), tfSecret.getText());

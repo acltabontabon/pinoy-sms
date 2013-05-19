@@ -32,30 +32,6 @@
         <ToggleButton fx:id="tgConfiguration" font="$x3" mnemonicParsing="false" prefHeight="40.0" prefWidth="78.0" text="Settings" toggleGroup="$tool" />
       </items>
     </ToolBar>
-    <StackPane fx:id="spWrite" prefHeight="255.0" prefWidth="272.0" visible="false" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="58.0">
-      <children>
-        <AnchorPane prefHeight="200.0" prefWidth="200.0" style="-fx-background-color:black;">
-          <children>
-            <Label layoutX="17.0" layoutY="14.0" text="Phone Numer:" textFill="WHITE" />
-            <Label layoutX="17.0" layoutY="44.0" text="Sender:" textFill="WHITE" />
-            <TextField fx:id="tfPhoneNo" alignment="CENTER_LEFT" focusTraversable="false" layoutX="118.0" layoutY="11.0" prefWidth="160.0" promptText="ex. 639xxxxxxxxxx" style="" />
-            <TextField fx:id="tfSender" alignment="CENTER_LEFT" layoutX="118.0" layoutY="41.0" prefWidth="160.0" promptText="Your Name" style="" />
-            <TextArea fx:id="tfMessage" layoutX="17.0" layoutY="71.0" prefHeight="107.0" prefWidth="261.0" promptText="Your Message Here" style="" styleClass="text-field" wrapText="true" />
-            <Button defaultButton="true" layoutX="218.0" layoutY="185.0" mnemonicParsing="false" onAction="#sendMessage" prefHeight="21.0" prefWidth="60.0" text="Send" />
-            <Label layoutX="17.0" layoutY="186.0" text="Characters Left:" textFill="WHITE">
-              <font>
-                <Font size="10.0" fx:id="x4" />
-              </font>
-            </Label>
-            <Label fx:id="lblRemainingChars" layoutX="87.0" layoutY="186.0" text="200" textFill="WHITE">
-              <font>
-                <Font name="System Bold" size="10.0" />
-              </font>
-            </Label>
-          </children>
-        </AnchorPane>
-      </children>
-    </StackPane>
     <StackPane id="spWrite" fx:id="spContacts" prefHeight="211.0" prefWidth="272.0" visible="true" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="58.0">
       <children>
         <TableView id="tblOutbox" fx:id="tblContact" prefHeight="211.0" prefWidth="262.0000999999975" style="">
@@ -109,7 +85,31 @@
             <Button defaultButton="true" layoutX="197.0" layoutY="160.0" mnemonicParsing="false" onAction="#configure" prefHeight="21.0" prefWidth="60.0" text="Update" />
             <Label font="$x1" layoutX="25.0" layoutY="101.0" text="API SECRET:" textFill="WHITE" />
             <TextField id="tfPhoneNo" fx:id="tfSecret" alignment="CENTER_LEFT" focusTraversable="false" layoutX="35.0" layoutY="127.0" prefWidth="222.0" promptText="" style="-fx-font-weight:bold;" />
-            <Label font="$x4" layoutX="4.0" layoutY="0.0" prefWidth="284.0" text="Note: Please provide a valid Keys from Nexmo.com to update your current Balance." textFill="#bfbfbf" wrapText="true" />
+            <Label layoutX="4.0" layoutY="0.0" prefWidth="284.0" text="Note: Please provide a valid Keys from Nexmo.com to update your current Balance." textFill="#bfbfbf" wrapText="true">
+              <font>
+                <Font size="10.0" fx:id="x4" />
+              </font>
+            </Label>
+          </children>
+        </AnchorPane>
+      </children>
+    </StackPane>
+    <StackPane fx:id="spWrite" prefHeight="255.0" prefWidth="272.0" visible="true" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="58.0">
+      <children>
+        <AnchorPane prefHeight="200.0" prefWidth="200.0" style="-fx-background-color:black;">
+          <children>
+            <Label layoutX="17.0" layoutY="14.0" text="Phone Numer:" textFill="WHITE" />
+            <Label layoutX="17.0" layoutY="44.0" text="Sender:" textFill="WHITE" />
+            <TextField fx:id="tfPhoneNo" alignment="CENTER_LEFT" focusTraversable="false" layoutX="118.0" layoutY="11.0" prefWidth="160.0" promptText="ex. 639xxxxxxxxxx" style="" />
+            <TextField fx:id="tfSender" alignment="CENTER_LEFT" layoutX="118.0" layoutY="41.0" prefWidth="160.0" promptText="Your Name" style="" />
+            <TextArea fx:id="tfMessage" layoutX="17.0" layoutY="71.0" prefHeight="107.0" prefWidth="261.0" promptText="Your Message Here" style="" styleClass="text-field" wrapText="true" />
+            <Button defaultButton="true" layoutX="218.0" layoutY="185.0" mnemonicParsing="false" onAction="#sendMessage" prefHeight="21.0" prefWidth="60.0" text="Send" />
+            <Label font="$x4" layoutX="17.0" layoutY="186.0" text="Characters Left:" textFill="WHITE" />
+            <Label fx:id="lblRemainingChars" layoutX="87.0" layoutY="186.0" text="200" textFill="WHITE">
+              <font>
+                <Font name="System Bold" size="10.0" />
+              </font>
+            </Label>
           </children>
         </AnchorPane>
       </children>
