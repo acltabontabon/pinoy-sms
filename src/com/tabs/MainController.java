@@ -20,12 +20,14 @@ public class MainController implements Initializable {
     private static List<SentMessage> sentMessageList;
     private static ObservableList<Contacts> observableContacts;
     private static ObservableList<SentMessage> observableSentMessages;
+    private static StringBuilder group;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         instance = this;
         contactList = Config.loadContacts();
         sentMessageList = Config.loadSentItems();
+        group = new StringBuilder();
         
         // Bind the StackPane visibility to its designated toggle button        
         spWrite.visibleProperty().bind(tgWrite.selectedProperty());
@@ -34,7 +36,7 @@ public class MainController implements Initializable {
         spConfiguration.visibleProperty().bind(tgConfiguration.selectedProperty());
 
         // Add validation for the input fields
-        tfPhoneNo.lengthProperty().addListener(new TextRestriction("\\d", tfPhoneNo, 12));
+        tfPhoneNo.lengthProperty().addListener(new TextRestriction("[0-9;]", tfPhoneNo, 1000));
         tfSender.lengthProperty().addListener(new TextRestriction("[a-zA-Z]", tfSender, 10));
         tfMessage.lengthProperty().addListener(new TextRestriction("[\\d\\D\\s]", tfMessage, 200));
         
@@ -42,12 +44,14 @@ public class MainController implements Initializable {
         colName.setCellValueFactory(new PropertyValueFactory<Contacts, String>("name"));
         colNumber.setCellValueFactory(new PropertyValueFactory<Contacts, String>("number"));
         observableContacts = FXCollections.observableArrayList();
+        tblContact.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         tblContact.setItems(observableContacts);
-        
+
         // Sets the tableView for the sent messages list
         colRecipient.setCellValueFactory(new PropertyValueFactory<SentMessage, String>("number"));
         colMessage.setCellValueFactory(new PropertyValueFactory<SentMessage, String>("message"));
         observableSentMessages = FXCollections.observableArrayList();
+        tblSentMessage.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         tblSentMessage.setItems(observableSentMessages);
         
         initFirm();
@@ -93,41 +97,57 @@ public class MainController implements Initializable {
     }
     
     @FXML private void sendMessage(ActionEvent evt) {
+        StringTokenizer token = new StringTokenizer(tfPhoneNo.getText(), ";");
+        
         boolean succeeded = false;  // sending status
-        int attempt = 0;            // number of sending attempts.
+        int sendCounter = 0;        // counts the number of successful attempt
+        double messageCost = 0d;    
+        double balance = 0d;
         
         SmsSubmissionResult[] result =  null;
         
         try {
-            NexmoSmsClient client = new NexmoSmsClient(firm.getKey(), firm.getSecret());
-            TextMessage message = new TextMessage(tfSender.getText(), checkPrefix(tfPhoneNo.getText()), tfMessage.getText());
-            result = client.submitMessage(message);
+            while (token.hasMoreTokens()) {
+                String num = token.nextToken();
 
-            for (int i = 0; i < result.length; i++) {
-                if (result[i].getStatus() == 0) {    // Success
-                    attempt = i;
-                    succeeded = true;
-                } else if (result[i].getStatus() == 2) {    // Missing params
-                    throw new Exception("Your request is incomplete and missing some mandatory fields.");
-                } else if (result[i].getStatus() == 4) {    // Invalid credentials
-                    throw new Exception("The api_key / api_secret you supplied is either invalid or disabled.");
-                } else if (result[i].getStatus() == 6 || result[i].getStatus() == 15) {    // Invalid message
-                    throw new Exception("The Nexmo platform was unable to process this message, for example, \nan un-recognized number prefix.");
-                } else if (result[i].getStatus() == 9) {    // Partner quota exceeded
-                    throw new Exception("Your trial account does not have sufficient credit to process this \nmessage.");
-                } else if (result[i].getStatus() == 10) {    // Too many existing binds
-                    throw new Exception("The number of simultaneous connections to the platform exceeds the \ncapabilities of your account.");
-                } else {
-                    throw new Exception(String.format("Error Code: %d \nError Text: %s", result[i].getStatus(), result[i].getErrorText()));
+                if (!num.trim().equals("")) {
+                    NexmoSmsClient client = new NexmoSmsClient(firm.getKey(), firm.getSecret());
+                    TextMessage message = new TextMessage(tfSender.getText(), checkPrefix(num), tfMessage.getText());
+                    result = client.submitMessage(message);
+                    
+                    for (int i = 0; i < result.length; i++) {
+                        if (result[i].getStatus() == 0) {    // Success
+                            succeeded = true;
+                            sendCounter++;
+                            
+                            balance = result[i].getRemainingBalance().doubleValue();
+                            messageCost += result[i].getMessagePrice().doubleValue();
+                            sentMessageList.add(new SentMessage(tfMessage.getText(), num));
+                            
+                        } else if (result[i].getStatus() == 2) {    // Missing params
+                            throw new Exception("Your request is incomplete and missing some mandatory fields.");
+                        } else if (result[i].getStatus() == 4) {    // Invalid credentials
+                            throw new Exception("The api_key / api_secret you supplied is either invalid or disabled.");
+                        } else if (result[i].getStatus() == 6 || result[i].getStatus() == 15) {    // Invalid message
+                            throw new Exception("The Nexmo platform was unable to process this message, for example, \nan un-recognized number prefix.");
+                        } else if (result[i].getStatus() == 9) {    // Partner quota exceeded
+                            throw new Exception("Your trial account does not have sufficient credit to process this \nmessage.");
+                        } else if (result[i].getStatus() == 10) {    // Too many existing binds
+                            throw new Exception("The number of simultaneous connections to the platform exceeds the \ncapabilities of your account.");
+                        } else if (result[i].getStatus() == 13) {    // Communication Failed
+                            throw new Exception("Message was not submitted because there was a communication failure.\n\nPlease check your internet connection.");
+                        } else {
+                            throw new Exception(String.format("Error Code: %d \nError Text: %s", result[i].getStatus(), result[i].getErrorText()));
+                        }
+                    }
                 }
             }
         } catch (Exception e) {
             FXDialog.showMessageDialog(e.getLocalizedMessage(), "Error", Message.ERROR);
         } finally {
             if (succeeded) {
-                sentMessageList.add(new SentMessage(tfMessage.getText(), tfPhoneNo.getText()));
                 reloadSentMessageList();
-                FXDialog.showMessageDialog("Your message has been sent.\n\nRemaining Balance: " + result[attempt].getRemainingBalance() + "\nMessage Cost: " + result[attempt].getMessagePrice(), "Pinoy SMS", Message.INFORMATION);
+                FXDialog.showMessageDialog(sendCounter + " message(s) has been sent.\n\nRemaining Balance: " + balance + "\nMessage Cost: " + messageCost, "Pinoy SMS", Message.INFORMATION);
             }
             tfMessage.requestFocus();
         }
@@ -135,14 +155,34 @@ public class MainController implements Initializable {
         
     @FXML private void deleteContact(ActionEvent evt) {
         if (tblContact.getSelectionModel().getSelectedIndex() != -1) {
-            contactList.remove(tblContact.getSelectionModel().getSelectedIndex());
+            ObservableList lst = tblContact.getSelectionModel().getSelectedIndices();
+            
+            for(int i=0; i<lst.size(); i++) 
+                contactList.get(Integer.parseInt(lst.get(i).toString())).setNumber("");
+                        
+            for(int i=0; i<contactList.size(); i++)
+                if (contactList.get(i).getNumber().equals("")) {
+                    contactList.remove(i);
+                    i--;
+                }
+            
             reloadContactList();
         }
     }
     
     @FXML private void deleteSentMessage(ActionEvent evt) {
         if (tblSentMessage.getSelectionModel().getSelectedIndex() != -1) {
-            sentMessageList.remove(tblSentMessage.getSelectionModel().getSelectedIndex());
+            ObservableList lst = tblSentMessage.getSelectionModel().getSelectedIndices();
+            
+            for(int i=0; i<lst.size(); i++) 
+                sentMessageList.get(Integer.parseInt(lst.get(i).toString())).setNumber("");
+            
+            for(int i=0; i<sentMessageList.size(); i++)
+                if (sentMessageList.get(i).getNumber().equals("")) {
+                    sentMessageList.remove(i);
+                    i--;
+                }
+            
             reloadSentMessageList();
         }
     }
@@ -160,9 +200,14 @@ public class MainController implements Initializable {
     }
     
     @FXML private void selectContact(ActionEvent evt) {
-        if(tblContact.getSelectionModel().getSelectedIndex() != -1) {
-            tfPhoneNo.setText(colNumber.getCellData((int) tblContact.getSelectionModel().getSelectedIndex()) + "");
+        if(tblContact.getSelectionModel().getSelectedIndex() != -1) { 
+            ObservableList lst = tblContact.getSelectionModel().getSelectedIndices();
+            for(int i=0; i<lst.size(); i++) {
+                group.append(colNumber.getCellData(Integer.parseInt(lst.get(i).toString())) + ";");
+            }
+            tfPhoneNo.setText(group.toString());
             tgWrite.setSelected(true);
+            group.delete(0, group.length());
         }
     }
 
@@ -177,7 +222,8 @@ public class MainController implements Initializable {
             FXDialog.showMessageDialog("API Configuration has been updated.", "Pinoy SMS", Message.INFORMATION);
         }
     }
-
+    
+    //Navigation
     @FXML private ToggleButton tgWrite;
     @FXML private ToggleButton tgOutbox;
     @FXML private ToggleButton tgConfiguration;
